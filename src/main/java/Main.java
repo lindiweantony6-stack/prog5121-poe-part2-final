@@ -42,19 +42,32 @@ public class Main {
 
         // Only reachable after a successful login
         System.out.println("\nWelcome to QuickChat.");
-        int limit = readInt(in, "How many messages do you wish to enter? ", 1);
-        int entered = 0;
 
+        // Ask until the user gives a valid number of messages (at least 1)
+        int limit = 0;
+        while (limit < 1) {
+            limit = readInt(in, "How many messages do you wish to enter? ");
+            if (limit < 1) {
+                System.out.println("Please enter a whole number of 1 or more.");
+            }
+        }
+
+        boolean messagesEntered = false;
         boolean running = true;
         while (running) {
             System.out.println("\n1) Send Messages\n2) Show recently sent messages\n3) Quit");
-            int choice = readInt(in, "Choose an option: ", 1);
+            int choice = readInt(in, "Choose an option: ");
             switch (choice) {
                 case 1:
-                    if (entered >= limit) {
+                    if (messagesEntered) {
                         System.out.println("You have already entered all " + limit + " messages.");
-                    } else if (composeMessage(in, entered)) {
-                        entered++;
+                    } else {
+                        // for loop: the user enters exactly the number of messages they chose
+                        for (int i = 0; i < limit; i++) {
+                            System.out.println("\n--- Message " + (i + 1) + " of " + limit + " ---");
+                            composeMessage(in, i);
+                        }
+                        messagesEntered = true;
                     }
                     break;
                 case 2:
@@ -70,45 +83,65 @@ public class Main {
         System.out.println("Total messages sent: " + Message.returnTotalMessages());
     }
 
-    /** Collects one message from the user. Returns true when it used up one of the allowed messages. */
-    private static boolean composeMessage(Scanner in, int number) {
-        System.out.print("Recipient cell number: ");
-        String recipient = in.nextLine().trim();
-        String cellResult = Message.checkRecipientCell(recipient);
-        System.out.println(cellResult);
-        if (!cellResult.equals("Cell phone number successfully captured.")) {
-            return false;
+    /** Collects one message from the user; keeps asking until the input is valid. */
+    private static void composeMessage(Scanner in, int number) {
+        String recipient;
+        while (true) {
+            System.out.print("Recipient cell number: ");
+            recipient = in.nextLine().trim();
+            String cellResult = Message.checkRecipientCell(recipient);
+            System.out.println(cellResult);
+            if (cellResult.equals("Cell phone number successfully captured.")) {
+                break;
+            }
         }
 
-        System.out.print("Message: ");
-        String text = in.nextLine();
-        String lengthResult = Message.checkMessageLength(text);
-        if (text.trim().isEmpty() || !lengthResult.equals("Message ready to send.")) {
-            System.out.println(text.trim().isEmpty() ? "Message cannot be empty." : lengthResult);
-            return false;
+        String text;
+        while (true) {
+            System.out.print("Message: ");
+            text = in.nextLine();
+            String lengthResult = Message.checkMessageLength(text);
+            if (text.trim().isEmpty()) {
+                System.out.println("Message cannot be empty.");
+            } else if (lengthResult.equals("Message ready to send.")) {
+                break;
+            } else {
+                System.out.println(lengthResult);
+            }
         }
 
         Message msg = new Message(number, recipient, text);
-        System.out.println("Message ID generated: " + msg.getMessageId());
+        System.out.println(msg.getMessageIdMessage());
         System.out.println("1) Send Message  2) Disregard Message  3) Store Message to send later");
-        int action = readInt(in, "Choose: ", 1);
+
+        int action;
+        do {
+            action = readInt(in, "Choose: ");
+            if (action < Message.SEND || action > Message.STORE) {
+                System.out.println("Please choose 1, 2 or 3.");
+            }
+        } while (action < Message.SEND || action > Message.STORE);
+
         System.out.println(msg.sentMessage(action));
         if (action == Message.SEND) {
             System.out.println(msg.details());
         } else if (action == Message.DISREGARD) {
-            in.nextLine(); // user presses 0 (or Enter) to delete the message
+            // The message is only deleted once the user presses 0
+            while (!in.nextLine().trim().equals("0")) {
+                System.out.println("Press 0 to delete the message.");
+            }
             System.out.println("Message deleted.");
         }
-        return action >= Message.SEND && action <= Message.STORE;
     }
 
-    private static int readInt(Scanner in, String prompt, int fallback) {
+    /** Reads a whole number from the user; returns -1 if the input is not a number. */
+    private static int readInt(Scanner in, String prompt) {
         System.out.print(prompt);
         String line = in.nextLine().trim();
         try {
             return Integer.parseInt(line);
         } catch (NumberFormatException e) {
-            return fallback == 1 ? -1 : fallback;
+            return -1;
         }
     }
 }
