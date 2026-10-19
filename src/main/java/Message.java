@@ -84,7 +84,7 @@ public class Message {
             return "Message ready to send.";
         }
         return "Message exceeds " + MAX_LENGTH + " characters by " + (length - MAX_LENGTH)
-                + ", please reduce size.";
+                + "; please reduce the size.";
     }
 
     /** First two digits of ID : message number : FIRSTLAST word, all caps. */
@@ -150,6 +150,12 @@ public class Message {
         storeMessage(Paths.get(STORE_FILE));
     }
 
+    /**
+     * Stores this message in a JSON file using the Gson library.
+     * Adapted from the Gson User Guide (pretty printing and toJson).
+     * Reference: Google, n.d. Gson User Guide.
+     * Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 October 2026).
+     */
     public void storeMessage(Path file) {
         List<Message> all = readStoredMessages(file);
         all.add(this);
@@ -160,6 +166,12 @@ public class Message {
         }
     }
 
+    /**
+     * Reads the stored messages back from the JSON file using the Gson library.
+     * Adapted from the Gson User Guide (fromJson and TypeToken for a list).
+     * Reference: Google, n.d. Gson User Guide.
+     * Available at: https://github.com/google/gson/blob/main/UserGuide.md (Accessed: 19 October 2026).
+     */
     public static List<Message> readStoredMessages(Path file) {
         if (!Files.exists(file)) {
             return new ArrayList<>();
@@ -177,4 +189,9 @@ public class Message {
     public String getRecipient() { return recipient; }
     public String getText() { return text; }
     public String getMessageHash() { return messageHash; }
+
+    /** The text shown to the user when the ID is created. */
+    public String getMessageIdMessage() {
+        return "Message ID generated: " + messageId;
+    }
 }
